@@ -1,0 +1,140 @@
+name: Auto-build upstream release
+
+# Daily check: when Factory ships a new Desktop version, build the Linux
+# packages from the public source repo and publish them here as a private
+# release. No cross-repo secrets needed: the builder repo is public and
+# GITHUB_TOKEN covers publishing in this repo.
+
+on:
+  schedule:
+    # 08:45 UTC daily — after the public repo's own 08:00 upstream check.
+    - cron: '45 8 * * *'
+  workflow_dispatch:
+    # Manual trigger from the Actions tab.
+
+permissions:
+  contents: write
+
+concurrency:
+  group: auto-build-upstream
+  cancel-in-progress: false
+
+jobs:
+  check-and-build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    steps:
+      - name: Check upstream version and gate on existing release
+        id: gate
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          LATEST=$(curl -sf https://api.factory.ai/api/desktop/latest-version | jq -r '.latestVersion // empty')
+          if [ -z "$LATEST" ]; then
+            echo "Could not determine latest upstream version." >&2
+            exit 1
+          fi
+          echo "Upstream latest version: $LATEST"
+          echo "factory_version=$LATEST" >> "$GITHUB_OUTPUT"
+          if gh release view "v$LATEST" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release v$LATEST already exists here. Skipping build."
+            echo "should_build=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "New version $LATEST — will build."
+            echo "should_build=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout port builder (public source repo)
+        if: steps.gate.outputs.should_build == 'true'
+        uses: actions/checkout@v7
+        with:
+          repository: seelvupledevelop/factory-desktop-linux
+          ref: master
+          path: builder
+
+      - name: Setup Node.js
+        if: steps.gate.outputs.should_build == 'true'
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: builder/package-lock.json
+
+      - name: Setup Rust
+        if: steps.gate.outputs.should_build == 'true'
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install system dependencies
+        if: steps.gate.outputs.should_build == 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y dpkg-dev xz-utils rpm libfuse2
+          # Official 7-Zip binary (>=21 required for LZFSE Apple DMGs);
+          # p7zip-full 16.02 fails with "Headers Error". Use the ip7z
+          # GitHub releases mirror of the official binary.
+          curl -sfL "https://github.com/ip7z/7zip/releases/download/26.01/7z2601-linux-x64.tar.xz" -o /tmp/7z.tar.xz
+          mkdir -p /tmp/7zip && tar xf /tmp/7z.tar.xz -C /tmp/7zip
+          sudo install -m755 /tmp/7zip/7zz /usr/local/bin/7zz
+          sudo ln -sf /usr/local/bin/7zz /usr/local/bin/7z
+          7z | head -2
+
+      - name: Install npm dependencies
+        if: steps.gate.outputs.should_build == 'true'
+        working-directory: builder
+        run: npm ci
+
+      - name: Build TypeScript
+        if: steps.gate.outputs.should_build == 'true'
+        working-directory: builder
+        run: npm run build
+
+      - name: Build Rust updater
+        if: steps.gate.outputs.should_build == 'true'
+        working-directory: builder/updater
+        run: cargo build --release
+
+      - name: Build Linux packages from official DMG
+        if: steps.gate.outputs.should_build == 'true'
+        working-directory: builder
+        run: |
+          node dist/cli.js build-all \
+            --factory-version "${{ steps.gate.outputs.factory_version }}" \
+            --targets deb,appimage
+
+      - name: Generate checksums
+        if: steps.gate.outputs.should_build == 'true'
+        working-directory: builder/dist
+        run: |
+          sha256sum factory-desktop_*.deb Factory-*.AppImage > "checksums-${{ steps.gate.outputs.factory_version }}.txt"
+          cat "checksums-${{ steps.gate.outputs.factory_version }}.txt"
+
+      - name: Publish private release
+        if: steps.gate.outputs.should_build == 'true'
+        working-directory: builder/dist
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.gate.outputs.factory_version }}
+        run: |
+          TAG="v$VERSION"
+          NOTES="Auto-built from upstream Factory Desktop $VERSION DMG by the factory-desktop-linux port (scheduled sync).
+
+          **Includes:** Linux Electron runtime, daemon WebSocket transport (127.0.0.1:37643), factory-desktop:// scheme handler, Rust update manager, systemd --user services.
+
+          **Install (Debian/Ubuntu/Mint):**
+          \`\`\`bash
+          sudo apt install ./factory-desktop_${VERSION}_amd64.deb
+          \`\`\`
+
+          **AppImage:**
+          \`\`\`bash
+          chmod +x Factory-${VERSION}.AppImage && ./Factory-${VERSION}.AppImage
+          \`\`\`
+
+          Private mirror — do not redistribute."
+
+          gh release create "$TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "Factory Desktop $VERSION (Linux) — deb + AppImage" \
+            --notes "$NOTES" \
+            --latest \
+            factory-desktop_*.deb Factory-*.AppImage "checksums-$VERSION.txt"
