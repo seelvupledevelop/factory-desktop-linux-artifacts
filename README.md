@@ -23,6 +23,15 @@ The `.deb`, `.AppImage`, and `checksums-0.187.0.txt` are attached to the
 [private release v0.187.0](https://github.com/seelvupledevelop/factory-desktop-linux-artifacts/releases/tag/v0.187.0)
 (git cannot carry files over 100 MB; GitHub Releases allow up to 2 GB each).
 
+**Direct downloads** (private — require repo access):
+
+- [factory-desktop_0.187.0_amd64.deb](https://github.com/seelvupledevelop/factory-desktop-linux-artifacts/releases/download/v0.187.0/factory-desktop_0.187.0_amd64.deb)
+- [Factory-0.187.0.AppImage](https://github.com/seelvupledevelop/factory-desktop-linux-artifacts/releases/download/v0.187.0/Factory-0.187.0.AppImage)
+- [checksums-0.187.0.txt](https://github.com/seelvupledevelop/factory-desktop-linux-artifacts/releases/download/v0.187.0/checksums-0.187.0.txt)
+
+GitHub's release-asset digests confirm integrity: the uploaded files hash
+exactly to the SHA-256 values in the table above (`477c61da…` / `a9a0baca…`).
+
 ## Install
 
 ```sh
