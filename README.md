@@ -12,8 +12,10 @@ port builder. Not affiliated with or supported by Factory. Official source:
 
 | File | Size | SHA-256 |
 |---|---|---|
-| `factory-desktop_0.187.0_amd64.deb` | 254,803,514 B | `40b773a52ab1cc7aec5b0db935eace7b5e4e8e7c871fc9e0128e7f2b72edd9af` |
-| `Factory-0.187.0.AppImage` | 254,267,087 B | `126ec3a861efbbde37c877993a423aaa9434564c8cd2e724fa7c89a8aff2d58e` |
+| `factory-desktop_0.187.0_amd64.deb` | 254,814,878 B | `04771cc69deab630e27b38e87776e39b506425bae2bee8ec2c3447e85b0eddd6` |
+| `Factory-0.187.0.AppImage` | 254,193,313 B | `9981b0cdc75302587a3ae3186c132225c38eb4eac3a91db3f382b5fd05c40c39` |
+
+> Rebuilt 2026-09-30 (evening): added `MimeType=x-scheme-handler/factory-desktop` to the shipped .desktop entries — electron-builder had been silently dropping the scheme registration, which broke browser sign-in on cold starts ("No Apps available" after login). See `changelog.txt` in the source repo.
 
 Verify: `sha256sum -c checksums-0.187.0.txt`
 
