@@ -1,4 +1,4 @@
-# Factory Desktop 0.187.0 — Linux build artifacts (PRIVATE)
+# Factory Desktop 0.187.0 — Linux build artifacts (public mirror)
 
 Unofficial Linux packaging of **Factory Desktop 0.187.0**, built from Factory's
 official macOS DMG using the
@@ -6,7 +6,10 @@ official macOS DMG using the
 port builder. Not affiliated with or supported by Factory. Official source:
 [factory.ai](https://factory.ai).
 
-> ⚠️ Private mirror of build outputs. Do not redistribute. For personal use only.
+> ℹ️ Public mirror of the CI build outputs from the source repo. Every CI
+> build there is mirrored here automatically (`MIRROR_TOKEN` step in
+> `release.yml`), and a daily `auto-build-upstream.yml` workflow publishes
+> new upstream versions to this repo's releases as well.
 
 ## Artifacts — v0.187.0 (CI-built 2026-09-30, run 36774904364)
 
