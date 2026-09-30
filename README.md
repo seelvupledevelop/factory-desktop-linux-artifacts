@@ -8,14 +8,14 @@ port builder. Not affiliated with or supported by Factory. Official source:
 
 > ⚠️ Private mirror of build outputs. Do not redistribute. For personal use only.
 
-## Artifacts — v0.187.0 (built 2026-09-30)
+## Artifacts — v0.187.0 (CI-built 2026-09-30, run 36774904364)
 
 | File | Size | SHA-256 |
 |---|---|---|
-| `factory-desktop_0.187.0_amd64.deb` | 254,814,878 B | `04771cc69deab630e27b38e87776e39b506425bae2bee8ec2c3447e85b0eddd6` |
-| `Factory-0.187.0.AppImage` | 254,193,313 B | `9981b0cdc75302587a3ae3186c132225c38eb4eac3a91db3f382b5fd05c40c39` |
+| `factory-desktop_0.187.0_amd64.deb` | 258,584,498 B | `477c61da938feaa147509e7ea75b2ae6fa8427f3576db21f8048662afa0879a6` |
+| `Factory-0.187.0.AppImage` | 257,969,263 B | `a9a0baca154ba301c44841a4ff58e37e7e7ca1926253fe49fe4ded32cbd51c67` |
 
-> Rebuilt 2026-09-30 (evening): added `MimeType=x-scheme-handler/factory-desktop` to the shipped .desktop entries — electron-builder had been silently dropping the scheme registration, which broke browser sign-in on cold starts ("No Apps available" after login). See `changelog.txt` in the source repo.
+> Rebuilt twice on 2026-09-30: first locally with the `MimeType=x-scheme-handler/factory-desktop` fix (electron-builder had been silently dropping scheme registration — broke browser sign-in on cold starts), then by CI on the public repo (`Release` workflow). Both artifacts ship the fix; hashes above are the CI build, identical on the public release.
 
 Verify: `sha256sum -c checksums-0.187.0.txt`
 
